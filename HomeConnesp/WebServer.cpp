@@ -42,19 +42,19 @@ static const char HTML[] PROGMEM = R"HTML(<!DOCTYPE html>
   .btn-primary:hover{background:#6366f1}
   .btn-danger{background:#dc2626;color:#fff;border:none;border-radius:10px;padding:10px 20px;cursor:pointer}
   .btn-success{background:#16a34a;color:#fff;border:none;border-radius:10px;padding:10px 20px;cursor:pointer}
-  .sidebar{width:220px;min-height:100vh;background:#1e293b;padding:16px;position:fixed;top:0;left:0}
+  .sidebar{flex-direction:column;align-items:start;justify-content:center;width:220px;min-height:100vh;background:#1e293b;padding:16px;position:fixed;top:0;left:0}
   .main-content{margin-left:236px;padding:24px}
   @media(max-width:768px){.sidebar{display:none}.main-content{margin-left:0}}
   .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
   .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
   @media(max-width:900px){.grid-4{grid-template-columns:repeat(2,1fr)}.grid-2{grid-template-columns:1fr}}
   .toggle-label{display:flex;align-items:center;gap:10px;cursor:pointer}
-  .switch{position:relative;display:inline-block;width:44px;height:24px}
-  .switch input{opacity:0;width:0;height:0}
-  .slider-sw{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#334155;border-radius:24px;transition:.3s}
-  .slider-sw:before{position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s}
-  input:checked+.slider-sw{background:#4f46e5}
-  input:checked+.slider-sw:before{transform:translateX(20px)}
+  .switch{position:relative;display:inline-block;width:44px;height:24px;vertical-align:middle}
+  .switch input{position:absolute;inset:0;opacity:0;margin:0;padding:0;z-index:3;cursor:pointer;-webkit-appearance:none}
+  .slider-sw{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;box-sizing:border-box;background:#334155;border-radius:24px;transition:background .2s}
+  .slider-sw:before{position:absolute;content:"";height:18px;width:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:transform .2s;box-shadow:0 1px 2px rgba(0,0,0,0.15);transform:translateX(0)}
+  .switch input:checked + .slider-sw{background:#4f46e5}
+  .switch input:checked + .slider-sw:before{transform:translateX(20px)}
   fieldset{border:1px solid #334155;border-radius:12px;padding:16px;margin-bottom:12px}
   legend{color:#818cf8;padding:0 8px;font-size:.85rem}
   .field{margin-bottom:12px}
@@ -95,22 +95,22 @@ static const char HTML[] PROGMEM = R"HTML(<!DOCTYPE html>
   <h2 style="margin-bottom:20px">Dashboard</h2>
   <div class="grid-4">
     <div class="card" style="text-align:center">
-      <div class="material-icons" style="font-size:2rem;color:#f59e0b">sensors</div>
+      <div class="material-icons" style="font-size:2rem;color:#f59e0b;padding-block:18px">sensors</div>
       <div class="metric-val" id="d-motion">--</div>
       <div class="metric-lbl">PIR / Movimento</div>
     </div>
     <div class="card" style="text-align:center">
-      <div class="material-icons" style="font-size:2rem;color:#3b82f6">door_front</div>
+      <div class="material-icons" style="font-size:2rem;color:#3b82f6;padding-block:18px">door_front</div>
       <div class="metric-val" id="d-door">--</div>
       <div class="metric-lbl">Porta (Reed)</div>
     </div>
     <div class="card" style="text-align:center">
-      <div class="material-icons" style="font-size:2rem;color:#22c55e">power</div>
+      <div class="material-icons" style="font-size:2rem;color:#22c55e;padding-block:18px">power</div>
       <div class="metric-val" id="d-relay">--</div>
       <div class="metric-lbl">Relé</div>
     </div>
     <div class="card" style="text-align:center">
-      <div class="material-icons" style="font-size:2rem;color:#a855f7">lock</div>
+      <div class="material-icons" style="font-size:2rem;color:#a855f7;padding-block:18px">lock</div>
       <div class="metric-val" id="d-servo">--</div>
       <div class="metric-lbl">Servo (graus)</div>
     </div>
@@ -221,13 +221,13 @@ static const char HTML[] PROGMEM = R"HTML(<!DOCTYPE html>
     <div class="card">
       <b style="font-size:1.1rem">Servo (Tranca)</b>
       <div style="margin:16px 0">
-        <label style="font-size:.85rem;color:#94a3b8">Ângulo: <span id="servo-val">90</span>°</label>
-        <input type="range" min="0" max="180" value="90" id="servo-range" oninput="document.getElementById('servo-val').textContent=this.value">
+        <label style="font-size:.85rem;color:#94a3b8">Ângulo: <span id="servo-val">0</span>°</label>
+        <input type="range" min="0" max="180" value="0" id="servo-range" oninput="document.getElementById('servo-val').textContent=this.value">
       </div>
       <div style="display:flex;gap:12px;flex-wrap:wrap">
         <button class="btn-primary" onclick="ctrlServo(document.getElementById('servo-range').value)">Aplicar</button>
-        <button class="btn-success" onclick="ctrlServo(0);document.getElementById('servo-range').value=0;document.getElementById('servo-val').textContent=0">Abrir (0°)</button>
-        <button class="btn-danger"  onclick="ctrlServo(90);document.getElementById('servo-range').value=90;document.getElementById('servo-val').textContent=90">Fechar (90°)</button>
+        <button class="btn-success" onclick="ctrlServo(180);document.getElementById('servo-range').value=180;document.getElementById('servo-val').textContent=180">Abrir (180°)</button>
+        <button class="btn-danger"  onclick="ctrlServo(0);document.getElementById('servo-range').value=0;document.getElementById('servo-val').textContent=0">Fechar (0°)</button>
       </div>
     </div>
   </div>
@@ -293,17 +293,13 @@ static const char HTML[] PROGMEM = R"HTML(<!DOCTYPE html>
     </div>
     <hr style="border-color:#334155;margin:20px 0">
     <b style="color:#e2e8f0">Integrantes</b>
-    <table style="margin:16px auto;max-width:560px">
-      <thead><tr><th>Nome</th><th>E-mail</th></tr></thead>
-      <tbody>
-        <tr><td>Rafael Berton Martins</td><td>rafaelbertonmartins27@gmail.com</td></tr>
-      </tbody>
-    </table>
-    <hr style="border-color:#334155;margin:20px 0">
-    <a href="https://github.com/rafaelbertonmartins/home-connesp" target="_blank"
-       style="color:#818cf8;display:inline-flex;align-items:center;gap:6px;text-decoration:none">
-      <span class="material-icons">code</span> github.com/rafaelbertonmartins/home-connesp
-    </a>
+    <ul style="color:#94a3b8;margin-top:8px;font-size:.9rem">
+      <li>Carlos Henrique</li>
+      <li>Alan Mendes</li>
+      <li>José Ricardo</li>
+      <li>Rafael Berton</li>
+      <li>Rafael Padilha</li>
+    </ul>
   </div>
 </div>
 
@@ -644,7 +640,6 @@ void initWebServer() {
     });
 
     // ── POST /api/config ───────────────────────────────────────────────────────
-    AsyncCallbackJsonWebHandler* cfgHandler = nullptr; // manual body parse
     server.on("/api/config", HTTP_POST,
         [](AsyncWebServerRequest* req) {
             req->send(200, "application/json", "{\"ok\":true}");

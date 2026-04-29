@@ -11,9 +11,9 @@
 
 // ── Pin map ───────────────────────────────────────────────────────────────────
 #define PIN_PIR    5
-#define PIN_REED   15
-#define PIN_RELAY  26
-#define PIN_SERVO  27
+#define PIN_REED   19
+#define PIN_RELAY  21
+#define PIN_SERVO  18
 
 // ── Task handles ──────────────────────────────────────────────────────────────
 static TaskHandle_t hSensors   = NULL;
@@ -46,7 +46,7 @@ static void taskSensors(void* pv) {
 
         if (isrReed) {
             isrReed = false;
-            bool open = !digitalRead(PIN_REED); // reed NC: LOW = closed, HIGH = open
+            bool open = digitalRead(PIN_REED); // reed NC: LOW = open, HIGH = closed
             Sensors::setDoor(open);
             Logger::log(open ? LOG_WARN : LOG_INFO,
                         open ? "Reed: porta aberta" : "Reed: porta fechada");

@@ -6,7 +6,7 @@ static Preferences prefs;
 static uint32_t sensorInterval   = 2000;
 static bool     lightSleepEn     = false;
 static String   wifiSSID         = "rinho.dev";
-static String   wifiPass         = "10010001";
+static String   wifiPass         = "10001000";
 
 void Config::init() {
     prefs.begin("homeconn", false);
