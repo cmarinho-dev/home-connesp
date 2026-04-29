@@ -84,7 +84,7 @@ void Logger::purgeOld() {
     xSemaphoreTake(logMux, portMAX_DELAY);
     uint32_t now = millis();
     // Rebuild buffer keeping only entries < 24h
-    LogEntry tmp[MAX_RAM_LOGS];
+    static LogEntry tmp[MAX_RAM_LOGS];
     int newCount = 0;
     int start = (ramHead - ramCount + MAX_RAM_LOGS) % MAX_RAM_LOGS;
     for (int i = 0; i < ramCount; i++) {
@@ -100,7 +100,9 @@ void Logger::purgeOld() {
 }
 
 String Logger::exportCSV() {
-    String out = "timestamp_ms,uptime_s,level,message\n";
+    String out;
+    out.reserve(ramCount * 60);
+    out = "timestamp_ms,uptime_s,level,message\n";
     if (!logMux) return out;
     xSemaphoreTake(logMux, portMAX_DELAY);
     int start = (ramHead - ramCount + MAX_RAM_LOGS) % MAX_RAM_LOGS;
@@ -134,7 +136,9 @@ LogEntry Logger::get(int index) {
 String Logger::toJSON(int offset, int limit) {
     if (!logMux) return "[]";
     xSemaphoreTake(logMux, portMAX_DELAY);
-    String out = "[";
+    String out;
+    out.reserve(limit * 80);
+    out = "[";
     int start = (ramHead - ramCount + MAX_RAM_LOGS) % MAX_RAM_LOGS;
     int end   = min(offset + limit, ramCount);
     for (int i = offset; i < end; i++) {

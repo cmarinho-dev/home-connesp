@@ -38,29 +38,11 @@ static const char HTML[] PROGMEM = R"HTML(<!DOCTYPE html>
   table{width:100%;border-collapse:collapse;font-size:.85rem}
   th{background:#0f172a;padding:8px;text-align:left;color:#94a3b8}
   td{padding:8px;border-bottom:1px solid #334155}
-  .btn-primary{background:#4f46e5;color:#fff;border:none;border-radius:10px;padding:10px 20px;cursor:pointer;font-size:.9rem}
-  .btn-primary:hover{background:#6366f1}
-  .btn-danger{background:#dc2626;color:#fff;border:none;border-radius:10px;padding:10px 20px;cursor:pointer}
-  .btn-success{background:#16a34a;color:#fff;border:none;border-radius:10px;padding:10px 20px;cursor:pointer}
+  .btn-primary{background:#4f46e5;color:#fff}.btn-primary:hover{background:#6366f1}
+  .btn-danger{background:#dc2626;color:#fff}.btn-success{background:#16a34a;color:#fff}
   .sidebar{flex-direction:column;align-items:start;justify-content:center;width:220px;min-height:100vh;background:#1e293b;padding:16px;position:fixed;top:0;left:0}
   .main-content{margin-left:236px;padding:24px}
   @media(max-width:768px){.sidebar{display:none}.main-content{margin-left:0}}
-  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-  .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-  @media(max-width:900px){.grid-4{grid-template-columns:repeat(2,1fr)}.grid-2{grid-template-columns:1fr}}
-  .toggle-label{display:flex;align-items:center;gap:10px;cursor:pointer}
-  .switch{position:relative;display:inline-block;width:44px;height:24px;vertical-align:middle}
-  .switch input{position:absolute;inset:0;opacity:0;margin:0;padding:0;z-index:3;cursor:pointer;-webkit-appearance:none}
-  .slider-sw{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;box-sizing:border-box;background:#334155;border-radius:24px;transition:background .2s}
-  .slider-sw:before{position:absolute;content:"";height:18px;width:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:transform .2s;box-shadow:0 1px 2px rgba(0,0,0,0.15);transform:translateX(0)}
-  .switch input:checked + .slider-sw{background:#4f46e5}
-  .switch input:checked + .slider-sw:before{transform:translateX(20px)}
-  fieldset{border:1px solid #334155;border-radius:12px;padding:16px;margin-bottom:12px}
-  legend{color:#818cf8;padding:0 8px;font-size:.85rem}
-  .field{margin-bottom:12px}
-  .field label{display:block;font-size:.8rem;color:#94a3b8;margin-bottom:4px}
-  .field input,.field select{width:100%;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:8px;color:#e2e8f0;box-sizing:border-box}
-  .field input:focus{outline:none;border-color:#4f46e5}
   .about-card{text-align:center;padding:32px}
   .changelog-entry{border-left:3px solid #4f46e5;padding:8px 16px;margin-bottom:12px;background:#0f172a;border-radius:0 8px 8px 0}
   .version-tag{background:#4f46e5;color:#fff;border-radius:6px;padding:2px 8px;font-size:.75rem;margin-right:8px}
@@ -93,79 +75,79 @@ static const char HTML[] PROGMEM = R"HTML(<!DOCTYPE html>
 <!-- ══════════ DASHBOARD ══════════ -->
 <div id="page-dashboard" class="page active">
   <h2 style="margin-bottom:20px">Dashboard</h2>
-  <div class="grid-4">
-    <div class="card" style="text-align:center">
+  <div class="grid">
+    <div class="card s12 m6 l3" style="text-align:center">
       <div class="material-icons" style="font-size:2rem;color:#f59e0b;padding-block:18px">sensors</div>
       <div class="metric-val" id="d-motion">--</div>
       <div class="metric-lbl">PIR / Movimento</div>
     </div>
-    <div class="card" style="text-align:center">
+    <div class="card s12 m6 l3" style="text-align:center">
       <div class="material-icons" style="font-size:2rem;color:#3b82f6;padding-block:18px">door_front</div>
       <div class="metric-val" id="d-door">--</div>
       <div class="metric-lbl">Porta (Reed)</div>
     </div>
-    <div class="card" style="text-align:center">
+    <div class="card s12 m6 l3" style="text-align:center">
       <div class="material-icons" style="font-size:2rem;color:#22c55e;padding-block:18px">power</div>
       <div class="metric-val" id="d-relay">--</div>
       <div class="metric-lbl">Relé</div>
     </div>
-    <div class="card" style="text-align:center">
+    <div class="card s12 m6 l3" style="text-align:center">
       <div class="material-icons" style="font-size:2rem;color:#a855f7;padding-block:18px">lock</div>
       <div class="metric-val" id="d-servo">--</div>
       <div class="metric-lbl">Servo (graus)</div>
     </div>
   </div>
-  <div class="grid-4" style="margin-top:4px">
-    <div class="card" style="text-align:center">
+  <div class="grid" style="margin-top:4px">
+    <div class="card s12 m6 l3" style="text-align:center">
       <div class="metric-val" id="d-cpu">--%</div>
       <div class="metric-lbl">CPU Load</div>
     </div>
-    <div class="card" style="text-align:center">
+    <div class="card s12 m6 l3" style="text-align:center">
       <div class="metric-val" id="d-heap">-- KB</div>
       <div class="metric-lbl">Heap Livre</div>
     </div>
-    <div class="card" style="text-align:center">
+    <div class="card s12 m6 l3" style="text-align:center">
       <div class="metric-val" id="d-rssi">--</div>
       <div class="metric-lbl">Wi-Fi RSSI (dBm)</div>
     </div>
-    <div class="card" style="text-align:center">
+    <div class="card s12 m6 l3" style="text-align:center">
       <div class="metric-val" id="d-uptime">--</div>
       <div class="metric-lbl">Uptime (s)</div>
     </div>
   </div>
-  <div class="grid-2">
-    <div class="card"><canvas id="chartCpu"></canvas></div>
-    <div class="card"><canvas id="chartHeap"></canvas></div>
+  <div class="grid">
+    <div class="card s12 m6"><canvas id="chartCpu"></canvas></div>
+    <div class="card s12 m6"><canvas id="chartHeap"></canvas></div>
   </div>
-  <div class="grid-2">
-    <div class="card"><canvas id="chartPir"></canvas></div>
-    <div class="card"><canvas id="chartDoor"></canvas></div>
+  <div class="grid">
+    <div class="card s12 m6"><canvas id="chartPir"></canvas></div>
+    <div class="card s12 m6"><canvas id="chartDoor"></canvas></div>
   </div>
 </div>
 
 <!-- ══════════ PERFORMANCE ══════════ -->
 <div id="page-performance" class="page">
   <h2 style="margin-bottom:20px">Performance</h2>
-  <div class="grid-4">
-    <div class="card" style="text-align:center">
+  <div class="grid">
+    <div class="card s12 m6 l3" style="text-align:center">
       <div class="metric-val" id="p-cpu">--%</div><div class="metric-lbl">CPU Load</div>
     </div>
-    <div class="card" style="text-align:center">
+    <div class="card s12 m6 l3" style="text-align:center">
       <div class="metric-val" id="p-heap-free">--</div><div class="metric-lbl">Heap Livre (B)</div>
     </div>
-    <div class="card" style="text-align:center">
+    <div class="card s12 m6 l3" style="text-align:center">
       <div class="metric-val" id="p-heap-min">--</div><div class="metric-lbl">Heap Mín. (B)</div>
     </div>
-    <div class="card" style="text-align:center">
+    <div class="card s12 m6 l3" style="text-align:center">
       <div class="metric-val" id="p-flash">--</div><div class="metric-lbl">Flash Usada (KB)</div>
     </div>
   </div>
-  <div class="grid-2">
-    <div class="card">
+  <div class="grid">
+    <div class="card s12 m6">
       <b>Memória</b><br><br>
       <canvas id="chartMem"></canvas>
     </div>
-    <div class="card">
+    <div class="card s12 m6">
       <b>PSRAM / Flash</b><br><br>
       <canvas id="chartFlash"></canvas>
     </div>
@@ -209,8 +191,8 @@ static const char HTML[] PROGMEM = R"HTML(<!DOCTYPE html>
 <!-- ══════════ CONTROLE ══════════ -->
 <div id="page-control" class="page">
   <h2 style="margin-bottom:20px">Controle Manual</h2>
-  <div class="grid-2">
-    <div class="card">
+  <div class="grid">
+    <div class="card s12 m6">
       <b style="font-size:1.1rem">Relé (Luz / Ventilador)</b>
       <div style="margin:20px 0;font-size:.9rem;color:#94a3b8">Estado atual: <span id="c-relay-state" style="color:#e2e8f0;font-weight:600">--</span></div>
       <div style="display:flex;gap:12px">
@@ -218,11 +200,13 @@ static const char HTML[] PROGMEM = R"HTML(<!DOCTYPE html>
         <button class="btn-danger"  onclick="ctrlRelay(false)">Desligar</button>
       </div>
     </div>
-    <div class="card">
+    <div class="card s12 m6">
       <b style="font-size:1.1rem">Servo (Tranca)</b>
       <div style="margin:16px 0">
         <label style="font-size:.85rem;color:#94a3b8">Ângulo: <span id="servo-val">0</span>°</label>
-        <input type="range" min="0" max="180" value="0" id="servo-range" oninput="document.getElementById('servo-val').textContent=this.value">
+        <slider>
+          <input type="range" min="0" max="180" value="0" id="servo-range" oninput="document.getElementById('servo-val').textContent=this.value">
+        </slider
       </div>
       <div style="display:flex;gap:12px;flex-wrap:wrap">
         <button class="btn-primary" onclick="ctrlServo(document.getElementById('servo-range').value)">Aplicar</button>
@@ -235,10 +219,13 @@ static const char HTML[] PROGMEM = R"HTML(<!DOCTYPE html>
     <b>Modo Automático</b>
     <div style="margin-top:12px;color:#94a3b8;font-size:.9rem">Quando ativo, o sistema controla relé e servo automaticamente via sensores.</div>
     <div style="margin-top:16px">
-      <label class="toggle-label">
-        <span class="switch"><input type="checkbox" id="auto-mode" onchange="ctrlAutoMode(this.checked)"><span class="slider-sw"></span></span>
+      <nav>
+        <label class="switch">
+          <input type="checkbox" id="auto-mode" onchange="ctrlAutoMode(this.checked)">
+          <span></span>
+        </label>
         <span id="auto-mode-lbl">Desativado</span>
-      </label>
+      </nav>
     </div>
   </div>
 </div>
@@ -257,10 +244,13 @@ static const char HTML[] PROGMEM = R"HTML(<!DOCTYPE html>
     </fieldset>
     <fieldset>
       <legend>Energia</legend>
-      <label class="toggle-label">
-        <span class="switch"><input type="checkbox" id="cfg-sleep"><span class="slider-sw"></span></span>
+      <nav>
+        <label class="switch">
+          <input type="checkbox" id="cfg-sleep">
+          <span></span>
+        </label>
         <span>Habilitar Light Sleep (quando inativo &gt;5min)</span>
-      </label>
+      </nav>
     </fieldset>
     <fieldset>
       <legend>Wi-Fi</legend>
@@ -544,7 +534,7 @@ async function saveConfig() {
     password:        document.getElementById('cfg-pass').value
   };
   const r = await post('/api/config', body);
-  const msg = document.getElementById('cfg-msg');
+  const msg = docuƒƒment.getElementById('cfg-msg');
   msg.textContent = r.ok ? '✔ Salvo!' : '✘ Erro';
   setTimeout(() => msg.textContent = '', 3000);
 }

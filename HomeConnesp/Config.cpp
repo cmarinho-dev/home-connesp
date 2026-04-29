@@ -6,14 +6,14 @@ static Preferences prefs;
 static uint32_t sensorInterval   = 2000;
 static bool     lightSleepEn     = false;
 static String   wifiSSID         = "rinho.dev";
-static String   wifiPass         = "10001000";
+static String   wifiPass         = "rinho006";
 
 void Config::init() {
     prefs.begin("homeconn", false);
     sensorInterval = prefs.getUInt("sens_ms", 2000);
     lightSleepEn   = prefs.getBool("lsleep",  false);
     wifiSSID       = prefs.getString("ssid",  "rinho.dev");
-    wifiPass       = prefs.getString("pass",  "10010001");
+    wifiPass       = prefs.getString("pass",  "rinho006");
 }
 
 void Config::save() {
