@@ -11,7 +11,6 @@ static AsyncWebServer server(80);
 // ─── HTML ────────────────────────────────────────────────────────────────────
 static const char HTML[] PROGMEM = R"HTML(<!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -355,8 +354,14 @@ static const char HTML[] PROGMEM = R"HTML(<!DOCTYPE html>
                 <button class="btn-primary" onclick="filterLogs('INFO')" style="background:#1d4ed8">INFO</button>
                 <button class="btn-primary" onclick="filterLogs('WARN')" style="background:#b45309">WARN</button>
                 <button class="btn-primary" onclick="filterLogs('ERROR')" style="background:#b91c1c">ERROR</button>
-                <button class="btn-primary" onclick="exportLogs()" style="background:#0f766e">Exportar CSV</button>
+                <!-- <button class="btn-primary" onclick="exportLogs()" style="background:#0f766e">Exportar CSV</button> -->
                 <button class="btn-danger" onclick="clearLogs()">Limpar Logs</button>
+            </div>
+            <div style="display:flex;margin-bottom:16px">
+                <button onclick="exportLogsJSON()"
+                    style="background:transparent;border:1px solid #64748b;color:#cbd5e1;padding:10px 16px;border-radius:6px;cursor:pointer">
+                    Exportar JSON
+                </button>
             </div>
             <div class="card">
                 <div id="log-container" style="max-height:60vh;overflow-y:auto"></div>
@@ -439,19 +444,6 @@ static const char HTML[] PROGMEM = R"HTML(<!DOCTYPE html>
                         <span>Habilitar Light Sleep (quando inativo &gt;5min)</span>
                     </nav>
                 </fieldset>
-                <fieldset>
-                    <legend>Wi-Fi</legend>
-                    <div class="field">
-                        <label>SSID</label>
-                        <input type="text" id="cfg-ssid" placeholder="Nome da rede">
-                    </div>
-                    <div class="field">
-                        <label>Senha</label>
-                        <input type="password" id="cfg-pass" placeholder="Senha do Wi-Fi">
-                    </div>
-                    <div style="font-size:.8rem;color:#f59e0b;margin-top:4px">⚠ Alterar Wi-Fi causa reconexão do
-                        dispositivo.</div>
-                </fieldset>
                 <button class="btn-primary" onclick="saveConfig()">Salvar Configurações</button>
                 <span id="cfg-msg" style="margin-left:12px;font-size:.85rem;color:#22c55e"></span>
             </div>
@@ -465,30 +457,51 @@ static const char HTML[] PROGMEM = R"HTML(<!DOCTYPE html>
                 <p style="color:#94a3b8">Sistema Ciberfísico de Automação Residencial com ESP32</p>
                 <hr style="border-color:#334155;margin:20px 0">
                 <div style="font-size:1rem;color:#94a3b8">
-                  <div style="font-size:1rem;color:#94a3b8">
-                    <b style="color:#e2e8f0">Universidade</b><br>
-                    Pontifícia Universidade Católica do Paraná — PUCPR<br>
-                    Curso de Engenharia de Software, 2026.1<br><br>
-                  </div>
-                <hr style="border-color:#334155;margin:20px 0">
-                <div style="font-size:1rem;color:#94a3b8">
-                  <div style="font-size:1rem;color:#94a3b8">
-                    <b style="color:#e2e8f0">Disciplina</b><br>
-                    Performance em Sistemas Ciberfísicos - Prof. Fabio Garcez Bettio<br><br>
-                  </div>
+                    <div style="font-size:1rem;color:#94a3b8">
+                        <b style="color:#e2e8f0">Universidade</b><br>
+                        Pontifícia Universidade Católica do Paraná — PUCPR<br>
+                        Curso de Engenharia de Software, 2026.1<br><br>
+                    </div>
+                    <hr style="border-color:#334155;margin:20px 0">
+                    <div style="font-size:1rem;color:#94a3b8">
+                        <div style="font-size:1rem;color:#94a3b8">
+                            <b style="color:#e2e8f0">Disciplina</b><br>
+                            Performance em Sistemas Ciberfísicos - Prof. Fabio Garcez Bettio<br><br>
+                        </div>
+                    </div>
+                    <hr style="border-color:#334155;margin:20px 0">
+                    <b style="color:#e2e8f0">Integrantes</b>
+                    <table style="margin:16px auto;max-width:560px">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>E-mail</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Alan Mendes Lopes Vareschini</td>
+                                <td>alan.vareschini@pucpr.edu.br</td>
+                            </tr>
+                            <tr>
+                                <td>Carlos Henrique Viana Marinho</td>
+                                <td>marinho.carlos@pucpr.edu.br</td>
+                            </tr>
+                            <tr>
+                                <td>José Ricardo Zella Aquino de Paula</td>
+                                <td>jose.zella@pucpr.edu.br</td>
+                            </tr>
+                            <tr>
+                                <td>Rafael Berton Martins</td>
+                                <td>rafael.berton@pucpr.edu.br</td>
+                            </tr>
+                            <tr>
+                                <td>Rafael Padilha de Lima Mattioli</td>
+                                <td>rafael.r@pucpr.edu.br</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
-                <hr style="border-color:#334155;margin:20px 0">
-                <b style="color:#e2e8f0">Integrantes</b>
-                <table style="margin:16px auto;max-width:560px">
-                  <thead><tr><th>Nome</th><th>E-mail</th></tr></thead>
-                  <tbody>
-                    <tr><td>Alan Mendes Lopes Vareschini</td><td>alan.vareschini@pucpr.edu.br</td></tr>
-                    <tr><td>Carlos Henrique Viana Marinho</td><td>marinho.carlos@pucpr.edu.br</td></tr>
-                    <tr><td>José Ricardo Zella Aquino de Paula</td><td>jose.zella@pucpr.edu.br</td></tr>
-                    <tr><td>Rafael Berton Martins</td><td>rafael.berton@pucpr.edu.br</td></tr>
-                    <tr><td>Rafael Padilha de Lima Mattioli</td><td>rafael.mattioli@pucpr.edu.br</td></tr>
-                  </tbody>
-                </table>
             </div>
         </div>
 
@@ -507,7 +520,7 @@ static const char HTML[] PROGMEM = R"HTML(<!DOCTYPE html>
                     <li>Multitarefa FreeRTOS: Sensors, Actuators, Performance, Logger, WebMonitor</li>
                     <li>Estimativa de CPU load via idle counter task</li>
                     <li>Light Sleep configurável via interface</li>
-                    <li>Configuração de Wi-Fi e intervalo de sensores sem regravar firmware</li>
+                    <li>Intervalo de sensores configurável sem regravar firmware</li>
                     <li>Persistência de config via Preferences (NVS)</li>
                     <li>Interface com BeerCSS + Chart.js, tema escuro responsivo</li>
                 </ul>
@@ -693,6 +706,18 @@ static const char HTML[] PROGMEM = R"HTML(<!DOCTYPE html>
 
         function exportLogs() { window.open('/api/logs/export', '_blank'); }
 
+        async function exportLogsJSON() {
+            const data = await api('/api/logs');
+            if (!data) return;
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'homeconnesp_logs.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
         async function clearLogs() {
             if (!confirm('Limpar todos os logs?')) return;
             await fetch('/api/logs/clear', { method: 'POST' });
@@ -730,14 +755,11 @@ static const char HTML[] PROGMEM = R"HTML(<!DOCTYPE html>
             document.getElementById('cfg-interval').value = d.sensor_interval;
             document.getElementById('cfg-interval-val').textContent = d.sensor_interval;
             document.getElementById('cfg-sleep').checked = d.light_sleep;
-            document.getElementById('cfg-ssid').value = d.ssid || '';
         }
         async function saveConfig() {
             const body = {
                 sensor_interval: parseInt(document.getElementById('cfg-interval').value),
-                light_sleep: document.getElementById('cfg-sleep').checked,
-                ssid: document.getElementById('cfg-ssid').value,
-                password: document.getElementById('cfg-pass').value
+                light_sleep: document.getElementById('cfg-sleep').checked
             };
             const r = await post('/api/config', body);
             const msg = document.getElementById('cfg-msg');

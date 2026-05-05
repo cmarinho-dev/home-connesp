@@ -13,7 +13,6 @@ namespace Config {
 
     String getSSID();
     String getPassword();
-    void   setWiFi(const String& ssid, const String& pass);
 
     String toJSON();
     void   fromJSON(const String& json);

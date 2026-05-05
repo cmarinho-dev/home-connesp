@@ -91,12 +91,17 @@ static void taskLogger(void* pv) {
 // Monitors WiFi and triggers light sleep when system is idle
 static void taskSleepMonitor(void* pv) {
     static uint32_t lastActivity = 0;
+    static uint32_t lastWiFiReconnect = 0;
 
     while (true) {
         uint32_t t0 = micros();
 
         // WiFi watchdog
-        if (WiFi.status() != WL_CONNECTED) {
+        wl_status_t wifiStatus = WiFi.status();
+        if (wifiStatus != WL_CONNECTED &&
+            wifiStatus != WL_IDLE_STATUS &&
+            millis() - lastWiFiReconnect > 60000) {
+            lastWiFiReconnect = millis();
             Logger::log(LOG_WARN, "WiFi perdido, reconectando...");
             WiFi.reconnect();
         }
