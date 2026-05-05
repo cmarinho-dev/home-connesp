@@ -16,13 +16,20 @@ static bool     _autoMode   = true;
 static Servo    _servo;
 
 // angleToTicks removed — using Servo library
+// Most relay modules for ESP32 are active-low: LOW energizes the relay.
+static constexpr bool RELAY_ACTIVE_LOW = true;
+
+static void writeRelay(bool on) {
+    digitalWrite(_relayPin, RELAY_ACTIVE_LOW ? (on ? LOW : HIGH) : (on ? HIGH : LOW));
+}
 
 void Actuators::init(uint8_t relayPin, uint8_t servoPin) {
     _relayPin = relayPin;
     _servoPin = servoPin;
 
     pinMode(_relayPin, OUTPUT);
-    digitalWrite(_relayPin, LOW);
+    _relayOn = false;
+    writeRelay(_relayOn);
 
     // Attach servo using ESP32Servo (with microseconds range)
     _servo.attach(_servoPin, SERVO_MIN_US, SERVO_MAX_US);
@@ -35,14 +42,14 @@ void Actuators::update() {
     if (Sensors::getMotion()) {
         if (!_relayOn) {
             _relayOn = true;
-            digitalWrite(_relayPin, HIGH);
+            writeRelay(_relayOn);
             Logger::log(LOG_INFO, "Auto: relé ligado por movimento");
         }
     } else {
         uint32_t elapsed = millis() - Sensors::getLastMotionTime();
         if (_relayOn && elapsed > 10000) {
             _relayOn = false;
-            digitalWrite(_relayPin, LOW);
+            writeRelay(_relayOn);
             Logger::log(LOG_INFO, "Auto: relé desligado (sem movimento)");
         }
     }
@@ -58,7 +65,7 @@ void Actuators::update() {
 
 void Actuators::setRelay(bool on) {
     _relayOn = on;
-    digitalWrite(_relayPin, on ? HIGH : LOW);
+    writeRelay(_relayOn);
 }
 bool Actuators::getRelay() { return _relayOn; }
 

@@ -366,6 +366,20 @@ static const char HTML[] PROGMEM = R"HTML(<!DOCTYPE html>
         <!-- ══════════ CONTROLE ══════════ -->
         <div id="page-control" class="page">
             <h2 style="margin-bottom:20px">Controle Manual</h2>
+            <div class="card">
+                <b>Modo Automático</b>
+                <div style="margin-top:12px;color:#94a3b8;font-size:.9rem">Quando ativo, o sistema controla relé e servo
+                    automaticamente via sensores.</div>
+                <div style="margin-top:16px">
+                    <nav>
+                        <label class="switch">
+                            <input type="checkbox" id="auto-mode" onchange="ctrlAutoMode(this.checked)">
+                            <span></span>
+                        </label>
+                        <span id="auto-mode-lbl">Desativado</span>
+                    </nav>
+                </div>
+            </div>
             <div class="grid">
                 <div class="card s12 m6">
                     <b style="font-size:1.1rem">Relé (Luz / Ventilador)</b>
@@ -396,20 +410,6 @@ static const char HTML[] PROGMEM = R"HTML(<!DOCTYPE html>
                                 (0°)</button>
                         </div>
                     </div>
-                </div>
-            </div>
-            <div class="card">
-                <b>Modo Automático</b>
-                <div style="margin-top:12px;color:#94a3b8;font-size:.9rem">Quando ativo, o sistema controla relé e servo
-                    automaticamente via sensores.</div>
-                <div style="margin-top:16px">
-                    <nav>
-                        <label class="switch">
-                            <input type="checkbox" id="auto-mode" onchange="ctrlAutoMode(this.checked)">
-                            <span></span>
-                        </label>
-                        <span id="auto-mode-lbl">Desativado</span>
-                    </nav>
                 </div>
             </div>
         </div>
