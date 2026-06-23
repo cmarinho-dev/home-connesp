@@ -8,7 +8,7 @@ namespace Actuators {
     void setRelay(bool on);
     bool getRelay();
 
-    void setServo(uint8_t angle);  // 0-180
+    void setServo(uint8_t angle);  // 60-150
     uint8_t getServo();
 
     void setAutoMode(bool en);

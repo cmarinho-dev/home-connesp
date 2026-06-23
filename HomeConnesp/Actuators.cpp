@@ -5,13 +5,15 @@
 #include <ESP32Servo.h>
 
 // Servo parameters (using ESP32Servo library)
-#define SERVO_MIN_US   500
-#define SERVO_MAX_US   2400
+#define SERVO_MIN_US      500
+#define SERVO_MAX_US      2400
+#define SERVO_CLOSED_ANGLE 60
+#define SERVO_OPEN_ANGLE   150
 
 static uint8_t  _relayPin;
 static uint8_t  _servoPin;
 static bool     _relayOn    = false;
-static uint8_t  _servoAngle = 0;
+static uint8_t  _servoAngle = SERVO_CLOSED_ANGLE;
 static bool     _autoMode   = true;
 static Servo    _servo;
 
@@ -53,9 +55,9 @@ void Actuators::update() {
             Logger::log(LOG_INFO, "Auto: relé desligado (sem movimento)");
         }
     }
-    // Auto: door open → servo unlock (180°); door closed → servo lock (0°)
+    // Auto: door open -> servo unlock (150 deg); door closed -> servo lock (60 deg)
     bool doorOpen = Sensors::getDoor();
-    uint8_t target = doorOpen ? 180 : 0;
+    uint8_t target = doorOpen ? SERVO_OPEN_ANGLE : SERVO_CLOSED_ANGLE;
     if (_servoAngle != target) {
         _servoAngle = target;
         _servo.write(_servoAngle);
@@ -70,7 +72,7 @@ void Actuators::setRelay(bool on) {
 bool Actuators::getRelay() { return _relayOn; }
 
 void Actuators::setServo(uint8_t angle) {
-    _servoAngle = constrain(angle, 0, 180);
+    _servoAngle = constrain(angle, SERVO_CLOSED_ANGLE, SERVO_OPEN_ANGLE);
     _servo.write(_servoAngle);
 }
 uint8_t Actuators::getServo() { return _servoAngle; }

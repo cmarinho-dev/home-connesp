@@ -80,6 +80,8 @@ O sistema combina hardware, firmware e interface web para demonstrar conceitos d
 - Interface estilizada com **BeerCSS**;
 - Controle manual de relé e servo;
 - Configuração do intervalo dos sensores;
+- Configuração e troca de Wi-Fi pela interface web;
+- Fallback para AP `HomeConnesp-Setup` quando a conexão configurada falha;
 - Ativação/desativação do Light Sleep;
 - Tela de logs e changelog.
 
@@ -145,7 +147,7 @@ home-connesp/
     ├── Performance.cpp
     ├── Logger.h
     ├── Logger.cpp
-    ├── WebServer.h
+    ├── WebServerr.h
     └── WebServer.cpp
 ```
 
@@ -203,8 +205,7 @@ home-connesp/
 - `WiFi.h`;
 - `LittleFS.h`;
 - `Preferences.h`;
-- `ESPAsyncWebServer`;
-- `AsyncTCP`;
+- `WebServer.h` nativo do core ESP32;
 - `ESP32Servo`.
 
 ---
@@ -235,24 +236,22 @@ No gerenciador de placas da Arduino IDE, instale o suporte ao **ESP32**.
 Em seguida, instale as bibliotecas necessárias:
 
 ```text
-ESPAsyncWebServer
-AsyncTCP
 ESP32Servo
 ```
 
 ### 4. Configure a rede Wi-Fi
 
-Configure o SSID e a senha da rede Wi-Fi antes de compilar o firmware.
+O firmware tenta conectar primeiro no SSID e senha padrão declarados em `Config.cpp`.
+Se a conexão falhar, o ESP32 inicia o AP de configuração:
 
-Recomendação profissional:
-
-```cpp
-// secrets.h
-#define WIFI_SSID "NOME_DA_REDE"
-#define WIFI_PASS "SENHA_DA_REDE"
+```text
+SSID: HomeConnesp-Setup
+Senha: homeconnesp
+IP: 192.168.4.1
 ```
 
-E adicione `secrets.h` ao `.gitignore` para evitar o versionamento de credenciais.
+Conecte-se a esse AP, acesse `http://192.168.4.1` e altere a rede na guia **Config**.
+As novas credenciais ficam persistidas em NVS/Preferences, sem regravar o firmware.
 
 ### 5. Compile e envie para o ESP32
 
@@ -315,7 +314,7 @@ http://192.168.0.120
 
 ```json
 {
-  "angle": 180
+  "angle": 150
 }
 ```
 
@@ -378,7 +377,6 @@ Para uso em ambiente real ou repositório público, recomenda-se:
 ## 🚧 Melhorias futuras
 
 - Autenticação para acesso ao painel web;
-- Portal de configuração Wi-Fi;
 - Suporte a OTA Update;
 - Integração com MQTT;
 - Integração com Home Assistant;

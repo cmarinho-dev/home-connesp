@@ -1,12 +1,19 @@
-#include "WebServer.h"
+#include "WebServerr.h"
 #include "Config.h"
 #include "Logger.h"
 #include "Sensors.h"
 #include "Actuators.h"
 #include "Performance.h"
+#include <Arduino.h>
 #include <WiFi.h>
+#include <WebServer.h>
 
-static AsyncWebServer server(80);
+static WebServer server(80);
+static TaskHandle_t hWebServer = NULL;
+
+static const char* SETUP_AP_SSID = "HomeConnesp-Setup";
+static const char* SETUP_AP_PASS = "homeconnesp";
+static bool setupAPActive = false;
 
 // ─── HTML ────────────────────────────────────────────────────────────────────
 static const char HTML[] PROGMEM = R"HTML(<!DOCTYPE html>
@@ -218,6 +225,7 @@ static const char HTML[] PROGMEM = R"HTML(<!DOCTYPE html>
         <div class="nav-item" onclick="showPage('changelog',this)"><span class="material-icons">history</span>Changelog
         </div>
         <div style="position:absolute;bottom:16px;left:16px;right:16px;font-size:.75rem;color:#475569">
+            Modo: <span id="wifiMode">--</span><br>
             IP: <span id="wifiIP">--</span><br>
             RSSI: <span id="wifiRSSI">--</span> dBm<br>
             Uptime: <span id="uptime">--</span>
@@ -398,21 +406,21 @@ static const char HTML[] PROGMEM = R"HTML(<!DOCTYPE html>
                 <div class="card s12 m6">
                     <b style="font-size:1.1rem">Servo (Tranca)</b>
                     <div style="margin:16px 0">
-                        <label style="font-size:.85rem;color:#94a3b8">Ângulo: <span id="servo-val">0</span>°</label>
+                        <label style="font-size:.85rem;color:#94a3b8">Ângulo: <span id="servo-val">60</span>°</label>
                         <label class="slider">
-                            <input type="range" min="0" max="180" value="0" id="servo-range"
+                            <input type="range" min="60" max="150" value="60" id="servo-range"
                                 oninput="document.getElementById('servo-val').textContent=this.value">
                             <span></span>
                         </label>
                         <div style="display:flex;gap:12px;flex-wrap:wrap">
                             <button class="btn-primary"
                                 onclick="ctrlServo(document.getElementById('servo-range').value)">Aplicar</button>
-                            <button class="btn-success"
-                                onclick="ctrlServo(180);document.getElementById('servo-range').value=180;document.getElementById('servo-val').textContent=180">Abrir
-                                (180°)</button>
                             <button class="btn-danger"
-                                onclick="ctrlServo(0);document.getElementById('servo-range').value=0;document.getElementById('servo-val').textContent=0">Fechar
-                                (0°)</button>
+                                onclick="ctrlServo(60);document.getElementById('servo-range').value=60;document.getElementById('servo-val').textContent=60">Fechar
+                                (60°)</button>
+                            <button class="btn-success"
+                                onclick="ctrlServo(150);document.getElementById('servo-range').value=150;document.getElementById('servo-val').textContent=150">Abrir
+                                (150°)</button>
                         </div>
                     </div>
                 </div>
@@ -443,6 +451,27 @@ static const char HTML[] PROGMEM = R"HTML(<!DOCTYPE html>
                         </label>
                         <span>Habilitar Light Sleep (quando inativo &gt;5min)</span>
                     </nav>
+                </fieldset>
+                <fieldset>
+                    <legend>Wi-Fi</legend>
+                    <div style="display:grid;gap:12px;max-width:520px">
+                        <div style="font-size:.9rem;color:#94a3b8">
+                            Rede configurada: <b id="cfg-wifi-current" style="color:#e2e8f0">--</b><br>
+                            Estado: <span id="cfg-wifi-mode">--</span><br>
+                            AP de configuração: <span id="cfg-ap-info">--</span>
+                        </div>
+                        <label style="display:grid;gap:6px;font-size:.9rem;color:#94a3b8">
+                            SSID
+                            <input id="cfg-wifi-ssid" type="text" maxlength="32" autocomplete="off"
+                                style="padding:10px;border-radius:6px;border:1px solid #475569;background:#0f172a;color:#e2e8f0">
+                        </label>
+                        <label style="display:grid;gap:6px;font-size:.9rem;color:#94a3b8">
+                            Senha
+                            <input id="cfg-wifi-pass" type="password" maxlength="64" autocomplete="new-password"
+                                placeholder="Deixe em branco para manter a senha atual"
+                                style="padding:10px;border-radius:6px;border:1px solid #475569;background:#0f172a;color:#e2e8f0">
+                        </label>
+                    </div>
                 </fieldset>
                 <button class="btn-primary" onclick="saveConfig()">Salvar Configurações</button>
                 <span id="cfg-msg" style="margin-left:12px;font-size:.85rem;color:#22c55e"></span>
@@ -501,6 +530,10 @@ static const char HTML[] PROGMEM = R"HTML(<!DOCTYPE html>
                             </tr>
                         </tbody>
                     </table>
+                    <hr style="border-color:#334155;margin:20px 0">
+                    <b style="color:#e2e8f0">Repositório GitHub</b><br>
+                    <a href="https://github.com/cmarinho-dev/home-connesp" target="_blank"
+                        style="color:#818cf8">cmarinho-dev/home-connesp</a>
                 </div>
             </div>
         </div>
@@ -508,6 +541,16 @@ static const char HTML[] PROGMEM = R"HTML(<!DOCTYPE html>
         <!-- ══════════ CHANGELOG ══════════ -->
         <div id="page-changelog" class="page">
             <h2 style="margin-bottom:20px">Changelog</h2>
+            <div class="changelog-entry">
+                <div><span class="version-tag">v1.1.0</span><b>Entrega final</b></div>
+                <ul style="color:#94a3b8;margin-top:8px;font-size:.9rem">
+                    <li>Configuração de Wi-Fi pela página Config com persistência em NVS</li>
+                    <li>Fallback AP HomeConnesp-Setup para reconfiguração sem regravar firmware</li>
+                    <li>Webserver migrado para WebServer nativo do ESP32 com task dedicada</li>
+                    <li>Servo da tranca calibrado: abrir em 150° e fechar em 60°</li>
+                    <li>Link do repositório GitHub adicionado à página Sobre</li>
+                </ul>
+            </div>
             <div class="changelog-entry">
                 <div><span class="version-tag">v1.0.0</span><b>Lançamento inicial</b></div>
                 <ul style="color:#94a3b8;margin-top:8px;font-size:.9rem">
@@ -520,6 +563,7 @@ static const char HTML[] PROGMEM = R"HTML(<!DOCTYPE html>
                     <li>Multitarefa FreeRTOS: Sensors, Actuators, Performance, Logger, WebMonitor</li>
                     <li>Estimativa de CPU load via idle counter task</li>
                     <li>Light Sleep configurável via interface</li>
+                    <li>Fallback AP HomeConnesp-Setup e troca de Wi-Fi pela página Config</li>
                     <li>Intervalo de sensores configurável sem regravar firmware</li>
                     <li>Persistência de config via Preferences (NVS)</li>
                     <li>Interface com BeerCSS + Chart.js, tema escuro responsivo</li>
@@ -529,7 +573,7 @@ static const char HTML[] PROGMEM = R"HTML(<!DOCTYPE html>
                 <div><span class="version-tag" style="background:#334155">v0.9.0</span><b>Beta</b></div>
                 <ul style="color:#94a3b8;margin-top:8px;font-size:.9rem">
                     <li>Protótipo inicial com PIR, dashboard básico e Tailwind CSS</li>
-                    <li>Webserver assíncrono (ESPAsyncWebServer)</li>
+                    <li>Webserver embarcado com task dedicada</li>
                 </ul>
             </div>
         </div>
@@ -537,6 +581,12 @@ static const char HTML[] PROGMEM = R"HTML(<!DOCTYPE html>
     </main>
 
     <script>
+        if (!window.Chart) {
+            window.Chart = function (_, config) {
+                return { data: (config && config.data) || { labels: [], datasets: [{ data: [] }] }, update: () => { } };
+            };
+        }
+
         // ── Navigation ──────────────────────────────────────────────────────────────
         function showPage(id, el) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -618,6 +668,7 @@ static const char HTML[] PROGMEM = R"HTML(<!DOCTYPE html>
             document.getElementById('d-uptime').textContent = d.uptime + 's';
             document.getElementById('wifiRSSI').textContent = d.rssi;
             document.getElementById('wifiIP').textContent = d.ip || '--';
+            document.getElementById('wifiMode').textContent = d.wifi_mode || '--';
             document.getElementById('uptime').textContent = d.uptime + 's';
 
             pushPoint(chartCpu, t, d.cpu);
@@ -755,15 +806,33 @@ static const char HTML[] PROGMEM = R"HTML(<!DOCTYPE html>
             document.getElementById('cfg-interval').value = d.sensor_interval;
             document.getElementById('cfg-interval-val').textContent = d.sensor_interval;
             document.getElementById('cfg-sleep').checked = d.light_sleep;
+            document.getElementById('cfg-wifi-ssid').value = d.wifi_ssid || '';
+            document.getElementById('cfg-wifi-pass').value = '';
+            updateWiFiInfo();
+        }
+        async function updateWiFiInfo() {
+            const d = await api('/api/status');
+            if (!d) return;
+            document.getElementById('cfg-wifi-current').textContent = d.ssid || d.config_ssid || '--';
+            document.getElementById('cfg-wifi-mode').textContent = d.wifi_connected
+                ? `Conectado em ${d.ip}`
+                : `Sem conexão STA (${d.wifi_mode || '--'})`;
+            document.getElementById('cfg-ap-info').textContent = d.ap_active
+                ? `${d.ap_ssid} / ${d.ap_ip} / senha ${d.ap_password}`
+                : 'inativo';
         }
         async function saveConfig() {
+            const wifiPass = document.getElementById('cfg-wifi-pass').value;
             const body = {
                 sensor_interval: parseInt(document.getElementById('cfg-interval').value),
-                light_sleep: document.getElementById('cfg-sleep').checked
+                light_sleep: document.getElementById('cfg-sleep').checked,
+                wifi_ssid: document.getElementById('cfg-wifi-ssid').value.trim()
             };
+            if (wifiPass.length > 0) body.wifi_password = wifiPass;
             const r = await post('/api/config', body);
             const msg = document.getElementById('cfg-msg');
-            msg.textContent = r.ok ? '✔ Salvo!' : '✘ Erro';
+            msg.textContent = r.ok ? '✔ Salvo! Reconectando Wi-Fi...' : '✘ Erro';
+            setTimeout(updateWiFiInfo, 1500);
             setTimeout(() => msg.textContent = '', 3000);
         }
 
@@ -772,6 +841,7 @@ static const char HTML[] PROGMEM = R"HTML(<!DOCTYPE html>
             if (document.getElementById('page-performance').classList.contains('active')) updatePerformance();
             if (document.getElementById('page-logs').classList.contains('active')) updateLogs();
             if (document.getElementById('page-control').classList.contains('active')) updateControl();
+            if (document.getElementById('page-config').classList.contains('active')) updateWiFiInfo();
         }, 5000);
     </script>
 </body>
@@ -779,7 +849,90 @@ static const char HTML[] PROGMEM = R"HTML(<!DOCTYPE html>
 )HTML";
 
 // ─── Route helpers ────────────────────────────────────────────────────────────
+static String jsonEscape(const String& value) {
+    String out;
+    out.reserve(value.length() + 8);
+    for (size_t i = 0; i < value.length(); i++) {
+        char c = value.charAt(i);
+        if (c == '"' || c == '\\') {
+            out += '\\';
+            out += c;
+        } else if (c == '\n') {
+            out += "\\n";
+        } else if (c == '\r') {
+            out += "\\r";
+        } else if (c == '\t') {
+            out += "\\t";
+        } else {
+            out += c;
+        }
+    }
+    return out;
+}
+
+static void startSetupAP() {
+    if (setupAPActive) return;
+
+    WiFi.mode(WIFI_AP_STA);
+    setupAPActive = WiFi.softAP(SETUP_AP_SSID, SETUP_AP_PASS);
+    if (setupAPActive) {
+        String msg = "AP de configuracao ativo: " + String(SETUP_AP_SSID) +
+                     " IP=" + WiFi.softAPIP().toString();
+        Serial.println(msg);
+        Logger::log(LOG_WARN, msg);
+    } else {
+        Logger::log(LOG_ERROR, "Falha ao iniciar AP de configuracao");
+    }
+}
+
+static bool connectConfiguredWiFi(uint8_t maxTries) {
+    String ssid = Config::getSSID();
+    String password = Config::getPassword();
+    ssid.trim();
+
+    if (ssid.length() == 0) {
+        Logger::log(LOG_WARN, "SSID vazio, ativando AP de configuracao");
+        return false;
+    }
+
+    WiFi.mode(setupAPActive ? WIFI_AP_STA : WIFI_STA);
+    WiFi.disconnect(false, false);
+    vTaskDelay(pdMS_TO_TICKS(100));
+
+    Serial.print("Conectando ao WiFi ");
+    Serial.print(ssid);
+    if (password.length() > 0) {
+        WiFi.begin(ssid.c_str(), password.c_str());
+    } else {
+        WiFi.begin(ssid.c_str());
+    }
+
+    uint8_t tries = 0;
+    while (WiFi.status() != WL_CONNECTED && tries++ < maxTries) {
+        vTaskDelay(pdMS_TO_TICKS(500));
+        Serial.print(".");
+    }
+
+    if (WiFi.status() == WL_CONNECTED) {
+        String msg = "WiFi OK SSID=" + WiFi.SSID() + " IP=" + WiFi.localIP().toString();
+        Serial.println("\n" + msg);
+        Logger::log(LOG_INFO, msg);
+        return true;
+    }
+
+    Serial.println("\nWiFi falhou, AP de configuracao sera ativado");
+    Logger::log(LOG_WARN, ("WiFi falhou SSID=" + ssid).c_str());
+    return false;
+}
+
 static String statusJSON() {
+    bool wifiConnected = WiFi.status() == WL_CONNECTED;
+    String ip = wifiConnected ? WiFi.localIP().toString()
+                              : (setupAPActive ? WiFi.softAPIP().toString() : WiFi.localIP().toString());
+    String mode = setupAPActive ? (wifiConnected ? "AP+STA" : "AP") : "STA";
+    String connectedSSID = wifiConnected ? WiFi.SSID() : String("");
+    String apIP = setupAPActive ? WiFi.softAPIP().toString() : String("");
+
     String j = "{";
     j += "\"motion\":"    + String(Sensors::getMotion() ? "true" : "false") + ",";
     j += "\"door\":"      + String(Sensors::getDoor()   ? "true" : "false") + ",";
@@ -788,134 +941,124 @@ static String statusJSON() {
     j += "\"auto_mode\":" + String(Actuators::getAutoMode()? "true":"false")+ ",";
     j += "\"cpu\":"       + String(Performance::getCpuLoad(), 1)            + ",";
     j += "\"heap_free\":" + String(Performance::getHeapFree())              + ",";
-    j += "\"rssi\":"      + String(WiFi.RSSI())                             + ",";
-    j += "\"ip\":\""      + WiFi.localIP().toString()                       + "\",";
+    j += "\"rssi\":"      + String(wifiConnected ? WiFi.RSSI() : 0)         + ",";
+    j += "\"ip\":\""      + ip                                               + "\",";
+    j += "\"ssid\":\""    + jsonEscape(connectedSSID)                       + "\",";
+    j += "\"config_ssid\":\"" + jsonEscape(Config::getSSID())               + "\",";
+    j += "\"wifi_connected\":" + String(wifiConnected ? "true" : "false")   + ",";
+    j += "\"wifi_mode\":\"" + mode                                           + "\",";
+    j += "\"ap_active\":" + String(setupAPActive ? "true" : "false")        + ",";
+    j += "\"ap_ssid\":\"" + String(SETUP_AP_SSID)                           + "\",";
+    j += "\"ap_password\":\"" + String(SETUP_AP_PASS)                       + "\",";
+    j += "\"ap_ip\":\""   + apIP                                             + "\",";
     j += "\"uptime\":"    + String(Performance::getUptime());
     j += "}";
     return j;
 }
 
-static String bodyString(AsyncWebServerRequest* request) {
-    // Body already consumed by body handler; used via lambda capture below
-    return "";
+static void taskWebServer(void* pv) {
+    while (true) {
+        server.handleClient();
+        vTaskDelay(pdMS_TO_TICKS(2));
+    }
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 void initWebServer() {
     // ── Connect Wi-Fi ──────────────────────────────────────────────────────────
-    WiFi.begin(Config::getSSID().c_str(), Config::getPassword().c_str());
-    Serial.print("Conectando ao WiFi");
-    uint8_t tries = 0;
-    while (WiFi.status() != WL_CONNECTED && tries++ < 20) {
-        vTaskDelay(pdMS_TO_TICKS(500));
-        Serial.print(".");
-    }
-    if (WiFi.status() == WL_CONNECTED) {
-        Serial.println("\nConectado: " + WiFi.localIP().toString());
-        Logger::log(LOG_INFO, ("WiFi OK IP=" + WiFi.localIP().toString()).c_str());
-    } else {
-        Serial.println("\nWiFi falhou, continuando sem rede...");
-        Logger::log(LOG_WARN, "WiFi nao conectado");
+    if (!connectConfiguredWiFi(20)) {
+        startSetupAP();
     }
 
     // ── Static page ────────────────────────────────────────────────────────────
-    server.on("/", HTTP_GET, [](AsyncWebServerRequest* req) {
-        req->send_P(200, "text/html", HTML);
+    server.on("/", HTTP_GET, []() {
+        server.send_P(200, "text/html", HTML);
     });
 
     // ── GET /api/status ────────────────────────────────────────────────────────
-    server.on("/api/status", HTTP_GET, [](AsyncWebServerRequest* req) {
-        req->send(200, "application/json", statusJSON());
+    server.on("/api/status", HTTP_GET, []() {
+        server.send(200, "application/json", statusJSON());
     });
 
     // ── GET /api/performance ───────────────────────────────────────────────────
-    server.on("/api/performance", HTTP_GET, [](AsyncWebServerRequest* req) {
-        req->send(200, "application/json", Performance::toJSON());
+    server.on("/api/performance", HTTP_GET, []() {
+        server.send(200, "application/json", Performance::toJSON());
     });
 
     // ── GET /api/logs ──────────────────────────────────────────────────────────
-    server.on("/api/logs", HTTP_GET, [](AsyncWebServerRequest* req) {
-        req->send(200, "application/json", Logger::toJSON());
+    server.on("/api/logs", HTTP_GET, []() {
+        server.send(200, "application/json", Logger::toJSON());
     });
 
     // ── GET /api/logs/export ───────────────────────────────────────────────────
-    server.on("/api/logs/export", HTTP_GET, [](AsyncWebServerRequest* req) {
-        AsyncWebServerResponse* resp = req->beginResponse(200, "text/csv", Logger::exportCSV());
-        resp->addHeader("Content-Disposition", "attachment; filename=homeconnesp_logs.csv");
-        req->send(resp);
+    server.on("/api/logs/export", HTTP_GET, []() {
+        server.sendHeader("Content-Disposition", "attachment; filename=homeconnesp_logs.csv");
+        server.send(200, "text/csv", Logger::exportCSV());
     });
 
     // ── POST /api/logs/clear ───────────────────────────────────────────────────
-    server.on("/api/logs/clear", HTTP_POST, [](AsyncWebServerRequest* req) {
+    server.on("/api/logs/clear", HTTP_POST, []() {
         Logger::clear();
         Logger::log(LOG_INFO, "Logs limpos via interface");
-        req->send(200, "application/json", "{\"ok\":true}");
+        server.send(200, "application/json", "{\"ok\":true}");
     });
 
     // ── GET /api/config ────────────────────────────────────────────────────────
-    server.on("/api/config", HTTP_GET, [](AsyncWebServerRequest* req) {
-        req->send(200, "application/json", Config::toJSON());
+    server.on("/api/config", HTTP_GET, []() {
+        server.send(200, "application/json", Config::toJSON());
     });
 
     // ── POST /api/config ───────────────────────────────────────────────────────
-    server.on("/api/config", HTTP_POST,
-        [](AsyncWebServerRequest* req) {
-            req->send(200, "application/json", "{\"ok\":true}");
-        },
-        nullptr,
-        [](AsyncWebServerRequest* req, uint8_t* data, size_t len, size_t, size_t) {
-            String body = String((char*)data, len);
-            Config::fromJSON(body);
-            Config::save();
-            Logger::log(LOG_INFO, "Config salva via web");
-        }
-    );
+    server.on("/api/config", HTTP_POST, []() {
+        String body = server.arg("plain");
+        String oldSSID = Config::getSSID();
+        String oldPassword = Config::getPassword();
+        Config::fromJSON(body);
+        Config::save();
+        Logger::log(LOG_INFO, "Config salva via web");
+        server.send(200, "application/json", "{\"ok\":true}");
 
-    // ── POST /api/relay ────────────────────────────────────────────────────────
-    server.on("/api/relay", HTTP_POST,
-        [](AsyncWebServerRequest* req) {
-            req->send(200, "application/json", "{\"ok\":true}");
-        },
-        nullptr,
-        [](AsyncWebServerRequest* req, uint8_t* data, size_t len, size_t, size_t) {
-            String body = String((char*)data, len);
-            bool on = body.indexOf("true") >= 0;
-            Actuators::setRelay(on);
-            Logger::log(LOG_INFO, on ? "Rele ligado via web" : "Rele desligado via web");
-        }
-    );
-
-    // ── POST /api/servo ────────────────────────────────────────────────────────
-    server.on("/api/servo", HTTP_POST,
-        [](AsyncWebServerRequest* req) {
-            req->send(200, "application/json", "{\"ok\":true}");
-        },
-        nullptr,
-        [](AsyncWebServerRequest* req, uint8_t* data, size_t len, size_t, size_t) {
-            String body = String((char*)data, len);
-            int idx = body.indexOf("\"angle\":");
-            if (idx >= 0) {
-                int a = body.substring(idx + 8).toInt();
-                Actuators::setServo(a);
-                Logger::log(LOG_INFO, ("Servo=" + String(a) + " graus via web").c_str());
+        if (oldSSID != Config::getSSID() || oldPassword != Config::getPassword()) {
+            Logger::log(LOG_INFO, "Credenciais WiFi alteradas, tentando reconectar");
+            if (!connectConfiguredWiFi(20)) {
+                startSetupAP();
             }
         }
-    );
+    });
+
+    // ── POST /api/relay ────────────────────────────────────────────────────────
+    server.on("/api/relay", HTTP_POST, []() {
+        String body = server.arg("plain");
+        bool on = body.indexOf("true") >= 0;
+        Actuators::setRelay(on);
+        Logger::log(LOG_INFO, on ? "Rele ligado via web" : "Rele desligado via web");
+        server.send(200, "application/json", "{\"ok\":true}");
+    });
+
+    // ── POST /api/servo ────────────────────────────────────────────────────────
+    server.on("/api/servo", HTTP_POST, []() {
+        String body = server.arg("plain");
+        int idx = body.indexOf("\"angle\":");
+        if (idx >= 0) {
+            int a = body.substring(idx + 8).toInt();
+            Actuators::setServo(a);
+            Logger::log(LOG_INFO, ("Servo=" + String(a) + " graus via web").c_str());
+        }
+        server.send(200, "application/json", "{\"ok\":true}");
+    });
 
     // ── POST /api/automode ─────────────────────────────────────────────────────
-    server.on("/api/automode", HTTP_POST,
-        [](AsyncWebServerRequest* req) {
-            req->send(200, "application/json", "{\"ok\":true}");
-        },
-        nullptr,
-        [](AsyncWebServerRequest* req, uint8_t* data, size_t len, size_t, size_t) {
-            String body = String((char*)data, len);
-            bool en = body.indexOf("true") >= 0;
-            Actuators::setAutoMode(en);
-            Logger::log(LOG_INFO, en ? "Modo auto ativado" : "Modo auto desativado");
-        }
-    );
+    server.on("/api/automode", HTTP_POST, []() {
+        String body = server.arg("plain");
+        bool en = body.indexOf("true") >= 0;
+        Actuators::setAutoMode(en);
+        Logger::log(LOG_INFO, en ? "Modo auto ativado" : "Modo auto desativado");
+        server.send(200, "application/json", "{\"ok\":true}");
+    });
 
     server.begin();
+    if (!hWebServer) {
+        xTaskCreatePinnedToCore(taskWebServer, "WebServer", 8192, NULL, 1, &hWebServer, 0);
+    }
     Logger::log(LOG_INFO, "WebServer iniciado na porta 80");
 }
